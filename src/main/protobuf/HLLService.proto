@@ -1,0 +1,56 @@
+option java_package = "com.github.etacassiopeia.hbase.endpoint.service";
+option java_outer_classname = "ExtendedServices";
+option java_generic_services = true;
+option java_generate_equals_and_hash = true;
+option optimize_for = SPEED;
+
+message BaseOfferRequest {
+    extensions 100 to max;
+
+    enum Type {
+        OfferString = 1;
+        OfferHLL = 2;
+    }
+
+    required Type type = 1;
+
+    required bytes row = 2;
+    required bytes family = 3;
+    required bytes column = 4;
+}
+
+message OfferStringRequest {
+    extend BaseOfferRequest {
+        required OfferStringRequest request = 100;
+    }
+
+    required string value = 1;
+}
+
+message OfferHLLRequest {
+    extend BaseOfferRequest {
+        required OfferHLLRequest request = 101;
+    }
+
+    required bytes hll = 1;
+}
+
+message OfferRequests {
+    repeated BaseOfferRequest requests = 1;
+}
+
+message MultiCardinalityResponse {
+    message Cardinality {
+        required bytes row = 1;
+        required bytes family = 2;
+        required bytes column = 3;
+        required int64 cardinality = 4;
+    }
+
+    repeated Cardinality cardinalities = 1;
+}
+
+service HLLService {
+    rpc batchOfferRequest (OfferRequests) returns (MultiCardinalityResponse);
+    rpc offerRequest (BaseOfferRequest) returns (MultiCardinalityResponse.Cardinality);
+}
